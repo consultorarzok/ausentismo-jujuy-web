@@ -171,12 +171,21 @@ function openEstDetail(r){
     <button class="modal-close" id="modalClose" aria-label="Cerrar">✕</button>
     <h3>${esc(r.esc)}</h3>
     <div class="modal-sub">${esc(r.dir||'—')} · ${esc(r.loc||'—')}</div>
-    ${detailRow('Municipio / Comuna', esc(r.muni||'—'))}
-    ${detailRow('Departamento', esc(r.dpto||'—'))}
-    ${detailRow('Electores (esta escuela)', r.electores!=null ? r.electores.toLocaleString('es-AR') : '—')}
-    ${detailRow('Mesas', r.mesas!=null ? r.mesas : '—')}
-    ${detailRow('Ausentismo (zona)', ausTxt + ausentesLine(muniRow))}
-    ${detailRow('Precisión del punto', esc(precisionLabel(r)))}
+
+    <div class="subcard">
+      <h5>Este establecimiento</h5>
+      ${detailRow('Departamento', esc(r.dpto||'—'))}
+      ${detailRow('Electores (esta escuela)', r.electores!=null ? r.electores.toLocaleString('es-AR') : '—')}
+      ${detailRow('Mesas', r.mesas!=null ? r.mesas : '—')}
+      ${detailRow('Precisión del punto', esc(precisionLabel(r)))}
+    </div>
+
+    <div class="subcard">
+      <h5>Municipio / Comuna: ${esc(r.muni||'—')}</h5>
+      ${muniRow ? detailRow('Electores (zona)', muniRow.electores.toLocaleString('es-AR')) : ''}
+      ${muniRow ? detailRow('Votantes (zona)', muniRow.votantes!=null ? muniRow.votantes.toLocaleString('es-AR') : '—') : ''}
+      ${detailRow('Ausentismo (zona)', ausTxt + ausentesLine(muniRow))}
+    </div>
   `;
   const actions = [];
   if(r.lat!=null && r.lng!=null){
@@ -190,15 +199,26 @@ function openEstDetail(r){
 
 function openMuniDetail(r){
   const ausTxt = r.ausentismo!=null ? pill(r.ausentismo) : '<span class="pill na">s/d</span>';
+  const escuelas = state.data.est.filter(e=>e.muni===r.nombre);
   let html = `
     <button class="modal-close" id="modalClose" aria-label="Cerrar">✕</button>
     <h3>${esc(r.nombre)}</h3>
     <div class="modal-sub">${esc(r.tipo||'—')} · ${esc(r.departamento||'—')}</div>
-    ${detailRow('Mesas', r.mesas!=null ? r.mesas : '—')}
-    ${detailRow('Cobertura de mesas', r.cobertura!=null ? r.cobertura.toFixed(1)+'%' : '—')}
-    ${detailRow('Electores', r.electores!=null ? r.electores.toLocaleString('es-AR') : '—')}
-    ${detailRow('Votantes', r.votantes!=null ? r.votantes.toLocaleString('es-AR') : '—')}
-    ${detailRow('Ausentismo', ausTxt + ausentesLine(r))}
+
+    <div class="subcard">
+      <h5>Este Municipio / Comuna</h5>
+      ${detailRow('Mesas', r.mesas!=null ? r.mesas : '—')}
+      ${detailRow('Cobertura de mesas', r.cobertura!=null ? r.cobertura.toFixed(1)+'%' : '—')}
+      ${detailRow('Electores', r.electores!=null ? r.electores.toLocaleString('es-AR') : '—')}
+      ${detailRow('Votantes', r.votantes!=null ? r.votantes.toLocaleString('es-AR') : '—')}
+      ${detailRow('Ausentismo', ausTxt + ausentesLine(r))}
+    </div>
+
+    ${escuelas.length ? `
+    <div class="subcard">
+      <h5>Establecimientos en esta zona (${escuelas.length})</h5>
+      ${escuelas.map(e=>detailRow(esc(e.esc), (e.electores!=null?e.electores.toLocaleString('es-AR'):'—')+' electores')).join('')}
+    </div>` : ''}
   `;
   if(r.nota) html += `<div class="detail-note">${esc(r.nota)}</div>`;
   showModal(html);
