@@ -77,7 +77,7 @@ document.getElementById('theme-toggle').addEventListener('click', function(){
   document.documentElement.setAttribute('data-theme', next);
   try{localStorage.setItem('theme', next);}catch(e){}
   this.setAttribute('aria-checked', String(next==='dark'));
-  if(window.__gmap) window.__gmap.setOptions({ styles: next==='dark' ? DARK_STYLE : [] });
+  if(window.__gmap) window.__gmap.setOptions({ styles: next==='dark' ? DARK_STYLE : LIGHT_STYLE });
 });
 function isDarkNow(){
   var cur = document.documentElement.getAttribute('data-theme');
@@ -93,6 +93,11 @@ function ausColor(v){
   if(v<40) return '#de2d26';
   return '#a50f15';
 }
+
+const LIGHT_STYLE = [
+  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+];
 
 const DARK_STYLE = [
   { elementType: 'geometry', stylers: [{ color: '#1c1730' }] },
@@ -128,7 +133,7 @@ function initMap(){
   const map = new google.maps.Map(document.getElementById('gmap'), {
     center: { lat: -23.3, lng: -65.6 },
     zoom: 7,
-    styles: isDarkNow() ? DARK_STYLE : [],
+    styles: isDarkNow() ? DARK_STYLE : LIGHT_STYLE,
     mapTypeControl: false,
     streetViewControl: true,
     fullscreenControl: true,
