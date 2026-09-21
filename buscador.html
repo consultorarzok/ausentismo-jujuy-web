@@ -207,6 +207,7 @@ function openEstDetail(r){
 function openMuniDetail(r){
   const ausTxt = r.ausentismo!=null ? pill(r.ausentismo) : '<span class="pill na">s/d</span>';
   const escuelas = state.data.est.filter(e=>e.muni===r.nombre);
+  state.lastMuniEscuelas = escuelas;
   let html = `
     <button class="modal-close" id="modalClose" aria-label="Cerrar">✕</button>
     <h3>${esc(r.nombre)}</h3>
@@ -223,8 +224,8 @@ function openMuniDetail(r){
 
     ${escuelas.length ? `
     <div class="subcard">
-      <h5>Establecimientos en esta zona (${escuelas.length})</h5>
-      ${escuelas.map(e=>detailRow(esc(e.esc), (e.electores!=null?e.electores.toLocaleString('es-AR'):'—')+' electores')).join('')}
+      <h5>Establecimientos en esta zona (${escuelas.length}) — click para ver el detalle</h5>
+      ${escuelas.map((e,i)=>`<div class="detail-row detail-row-link" data-muni-esc-i="${i}"><span>${esc(e.esc)}</span><span>${e.electores!=null?e.electores.toLocaleString('es-AR'):'—'} electores</span></div>`).join('')}
     </div>` : ''}
   `;
   if(r.nota) html += `<div class="detail-note">${esc(r.nota)}</div>`;
@@ -236,6 +237,11 @@ function showModal(html){
   document.getElementById('modalOverlay').hidden = false;
   document.getElementById('modalClose').addEventListener('click', closeModal);
 }
+document.getElementById('modalCard').addEventListener('click', e=>{
+  const row = e.target.closest('[data-muni-esc-i]'); if(!row) return;
+  const escRow = state.lastMuniEscuelas[Number(row.dataset.muniEscI)];
+  if(escRow) openEstDetail(escRow);
+});
 function closeModal(){ document.getElementById('modalOverlay').hidden = true; }
 document.getElementById('modalOverlay').addEventListener('click', e=>{
   if(e.target.id === 'modalOverlay') closeModal();
