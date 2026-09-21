@@ -144,6 +144,7 @@ function initMap(){
     const pts = points.filter(p=>p.lat!=null && p.lng!=null);
     const bounds = new google.maps.LatLngBounds();
     const infoWindow = new google.maps.InfoWindow();
+    const markersByEsc = {};
 
     pts.forEach(p=>{
       const c = ausColor(p.ausentismo);
@@ -174,8 +175,18 @@ function initMap(){
         infoWindow.open({ map, anchor: marker });
       });
       bounds.extend(pos);
+      markersByEsc[p.esc] = marker;
     });
     map.fitBounds(bounds, 24);
+
+    const wanted = new URLSearchParams(location.search).get('esc');
+    if(wanted && markersByEsc[wanted]){
+      google.maps.event.addListenerOnce(map, 'idle', ()=>{
+        map.setZoom(16);
+        map.panTo(markersByEsc[wanted].getPosition());
+        google.maps.event.trigger(markersByEsc[wanted], 'click');
+      });
+    }
   });
 }
 </script>

@@ -57,6 +57,10 @@
   </section>
 </main>
 
+<div class="modal-overlay" id="modalOverlay" hidden>
+  <div class="modal-card" id="modalCard" role="dialog" aria-modal="true"></div>
+</div>
+
 <footer>
   <span>FUENTE: TRIBUNAL ELECTORAL PERMANENTE DE JUJUY (ELECTORALJUJUY.GOB.AR) · CONSULTORA RZ</span>
   <span><a class="inline" href="index.html">← Inicio</a></span>
@@ -133,9 +137,10 @@ function render(){
 
   document.getElementById('countNote').textContent = `${rows.length} resultado${rows.length===1?'':'s'}`;
 
+  state.lastRows = rows;
   const tbody = document.getElementById('tbody');
-  tbody.innerHTML = rows.map(r=>{
-    return '<tr>' + cols.map(c=>{
+  tbody.innerHTML = rows.map((r,i)=>{
+    return `<tr data-i="${i}">` + cols.map(c=>{
       let v = r[c.k];
       if(c.k==='ausentismo') return `<td>${pill(v)}</td>`;
       if(c.sort==='num') return `<td class="tabular">${v!=null ? v.toLocaleString('es-AR') : '—'}</td>`;
@@ -143,6 +148,72 @@ function render(){
     }).join('') + '</tr>';
   }).join('');
 }
+
+function esc(s){ return (s==null?'':String(s)).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function detailRow(label, value){ return `<div class="detail-row"><span>${label}</span><span>${value}</span></div>`; }
+
+function precisionLabel(r){
+  if(r.sin_geo) return 'Sin geocodificar';
+  if(r.lat==null) return 'Sin ubicación';
+  return r.approx ? 'Centroide de la localidad (aprox.)' : 'Dirección exacta';
+}
+
+function openEstDetail(r){
+  const ausTxt = r.ausentismo!=null ? pill(r.ausentismo) : '<span class="pill na">s/d</span>';
+  let html = `
+    <button class="modal-close" id="modalClose" aria-label="Cerrar">✕</button>
+    <h3>${esc(r.esc)}</h3>
+    <div class="modal-sub">${esc(r.dir||'—')} · ${esc(r.loc||'—')}</div>
+    ${detailRow('Municipio / Comuna', esc(r.muni||'—'))}
+    ${detailRow('Departamento', esc(r.dpto||'—'))}
+    ${detailRow('Electores', r.electores!=null ? r.electores.toLocaleString('es-AR') : '—')}
+    ${detailRow('Mesas', r.mesas!=null ? r.mesas : '—')}
+    ${detailRow('Ausentismo (zona)', ausTxt)}
+    ${detailRow('Precisión del punto', esc(precisionLabel(r)))}
+  `;
+  const actions = [];
+  if(r.lat!=null && r.lng!=null){
+    actions.push(`<a href="mapa.html?esc=${encodeURIComponent(r.esc)}">Ver en nuestro mapa →</a>`);
+    actions.push(`<a href="https://www.google.com/maps/search/?api=1&query=${r.lat},${r.lng}" target="_blank" rel="noopener">Abrir en Google Maps ↗</a>`);
+  }
+  if(actions.length) html += `<div class="detail-actions">${actions.join('')}</div>`;
+  html += `<div class="detail-note">El ausentismo mostrado es el de su Municipio/Comuna — no es un dato propio de la escuela, cada establecimiento no reporta ausentismo individual.</div>`;
+  showModal(html);
+}
+
+function openMuniDetail(r){
+  const ausTxt = r.ausentismo!=null ? pill(r.ausentismo) : '<span class="pill na">s/d</span>';
+  let html = `
+    <button class="modal-close" id="modalClose" aria-label="Cerrar">✕</button>
+    <h3>${esc(r.nombre)}</h3>
+    <div class="modal-sub">${esc(r.tipo||'—')} · ${esc(r.departamento||'—')}</div>
+    ${detailRow('Mesas', r.mesas!=null ? r.mesas : '—')}
+    ${detailRow('Cobertura de mesas', r.cobertura!=null ? r.cobertura.toFixed(1)+'%' : '—')}
+    ${detailRow('Electores', r.electores!=null ? r.electores.toLocaleString('es-AR') : '—')}
+    ${detailRow('Votantes', r.votantes!=null ? r.votantes.toLocaleString('es-AR') : '—')}
+    ${detailRow('Ausentismo', ausTxt)}
+  `;
+  if(r.nota) html += `<div class="detail-note">${esc(r.nota)}</div>`;
+  showModal(html);
+}
+
+function showModal(html){
+  document.getElementById('modalCard').innerHTML = html;
+  document.getElementById('modalOverlay').hidden = false;
+  document.getElementById('modalClose').addEventListener('click', closeModal);
+}
+function closeModal(){ document.getElementById('modalOverlay').hidden = true; }
+document.getElementById('modalOverlay').addEventListener('click', e=>{
+  if(e.target.id === 'modalOverlay') closeModal();
+});
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeModal(); });
+
+document.getElementById('tbody').addEventListener('click', e=>{
+  const tr = e.target.closest('tr'); if(!tr) return;
+  const r = state.lastRows[Number(tr.dataset.i)];
+  if(!r) return;
+  if(state.view==='est') openEstDetail(r); else openMuniDetail(r);
+});
 
 document.getElementById('thead').addEventListener('click', e=>{
   const th = e.target.closest('th'); if(!th) return;
