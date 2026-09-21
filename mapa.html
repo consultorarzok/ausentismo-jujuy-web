@@ -8,7 +8,22 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%2314151d%22/><circle cx=%2250%22 cy=%2250%22 r=%2226%22 fill=%22%23de2d26%22/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="style.css">
+<style>
+  #mapwrap{aspect-ratio:auto;height:74vh;min-height:480px}
+  #leafmap{width:100%;height:100%;background:var(--bg-elev)}
+  .leaflet-popup-content-wrapper{background:var(--bg-elev-2);color:var(--text);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+  .leaflet-popup-tip{background:var(--bg-elev-2)}
+  .leaflet-popup-content{margin:0.8rem 0.9rem;font-family:"Public Sans",sans-serif;font-size:0.83rem;min-width:190px}
+  .leaflet-popup-content .p-esc{font-weight:700;color:var(--text);margin-bottom:0.3rem;font-size:0.9rem}
+  .leaflet-popup-content .p-row{display:flex;justify-content:space-between;gap:0.7rem;padding:0.18rem 0;border-top:1px solid var(--border);color:var(--text-2)}
+  .leaflet-popup-content .p-note{margin-top:0.4rem;font-size:0.74rem;color:var(--text-mute)}
+  .leaflet-control-attribution{background:rgba(20,21,29,0.75) !important;color:var(--text-mute) !important;font-size:10px !important}
+  .leaflet-control-attribution a{color:var(--text-2) !important}
+  .leaflet-control-zoom a{background:var(--bg-elev) !important;color:var(--text) !important;border-color:var(--border-strong) !important}
+  .leaflet-control-zoom a:hover{background:var(--bg-elev-2) !important}
+</style>
 </head>
 <body>
 
@@ -26,15 +41,12 @@
   <div class="hero" style="padding-top:1.4rem">
     <div class="eyebrow">Mapa</div>
     <h1 style="font-size:1.9rem">297 establecimientos, coloreados por el ausentismo de su zona</h1>
-    <p class="lede">Cada punto es una escuela; el color es el % de ausentismo del Municipio o Comuna al que pertenece (no un dato propio de la escuela). Pasá el mouse para ver el detalle.</p>
+    <p class="lede">Cada punto es una escuela; el color es el % de ausentismo del Municipio o Comuna al que pertenece (no un dato propio de la escuela). Click en un punto para ver el detalle.</p>
   </div>
 
   <section style="margin-top:1.2rem">
     <div class="map-layout">
-      <div id="mapwrap">
-        <svg id="mapsvg" viewBox="0 0 800 1000" preserveAspectRatio="xMidYMid meet"></svg>
-        <div id="tooltip"></div>
-      </div>
+      <div id="mapwrap"><div id="leafmap"></div></div>
       <aside class="sidepanel">
         <h4>Escala de ausentismo</h4>
         <div class="legend">
@@ -51,120 +63,75 @@
           <div>◌ Centroide de la localidad</div>
         </div>
         <h4 style="margin-top:1.4rem" id="selTitle">Seleccioná un punto</h4>
-        <div id="selBody" style="font-size:0.85rem;color:var(--text-2)">Pasá el mouse sobre cualquier punto del mapa para ver su escuela, Municipio/Comuna, electores y ausentismo.</div>
+        <div id="selBody" style="font-size:0.85rem;color:var(--text-2)">Hacé click en cualquier punto del mapa para ver su escuela, Municipio/Comuna, electores y ausentismo.</div>
       </aside>
     </div>
   </section>
 </main>
 
 <footer>
-  <span>Fuente: Tribunal Electoral Permanente de Jujuy (electoraljujuy.gob.ar) · Consultora RZ</span>
+  <span>Fuente: Tribunal Electoral Permanente de Jujuy (electoraljujuy.gob.ar) · mapa © OpenStreetMap / CARTO · Consultora RZ</span>
   <span><a href="index.html">← Inicio</a></span>
 </footer>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
-const svgEl = document.getElementById('mapsvg');
-const tooltip = document.getElementById('tooltip');
-const mapwrap = document.getElementById('mapwrap');
-const VW = 800, VH = 1000, PAD = 36;
-
 function ausColor(v){
-  if(v===null||v===undefined) return 'var(--gray-na)';
-  if(v<10) return 'var(--r1)';
-  if(v<20) return 'var(--r2)';
-  if(v<30) return 'var(--r3)';
-  if(v<40) return 'var(--r4)';
-  return 'var(--r5)';
+  if(v===null||v===undefined) return '#5b5972';
+  if(v<10) return '#fee5d9';
+  if(v<20) return '#fcae91';
+  if(v<30) return '#fb6a4a';
+  if(v<40) return '#de2d26';
+  return '#a50f15';
+}
+
+const map = L.map('leafmap', { zoomControl:true, attributionControl:true }).setView([-23.3, -65.6], 7);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+  subdomains: 'abcd',
+  maxZoom: 19,
+}).addTo(map);
+
+const selTitle = document.getElementById('selTitle');
+const selBody = document.getElementById('selBody');
+
+function showDetail(p){
+  selTitle.textContent = p.esc;
+  const ausTxt = p.ausentismo!=null ? `${p.ausentismo.toFixed(1)}%` : 'sin dato calculable';
+  selBody.innerHTML = `
+    <div style="margin-bottom:.5rem"><strong style="color:var(--text)">${p.muni||'—'}</strong><br>${p.dpto||''}</div>
+    <div style="display:flex;justify-content:space-between;padding:.25rem 0;border-top:1px solid var(--border)"><span>Electores</span><span class="tabular" style="color:var(--text)">${p.electores.toLocaleString('es-AR')}</span></div>
+    <div style="display:flex;justify-content:space-between;padding:.25rem 0;border-top:1px solid var(--border)"><span>Mesas</span><span class="tabular" style="color:var(--text)">${p.mesas}</span></div>
+    <div style="display:flex;justify-content:space-between;padding:.25rem 0;border-top:1px solid var(--border)"><span>Ausentismo (zona)</span><span style="color:${ausColor(p.ausentismo)};font-weight:700">${ausTxt}</span></div>
+    <div style="margin-top:.6rem;color:var(--text-mute);font-size:.78rem">${p.dir||''}${p.approx ? ' · ubicación aproximada (centroide de la localidad)' : ''}</div>
+  `;
 }
 
 fetch('data/establecimientos.json').then(r=>r.json()).then(points=>{
   const pts = points.filter(p=>p.lat!=null && p.lng!=null);
-  const lat0 = pts.reduce((s,p)=>s+p.lat,0)/pts.length;
-  const cosLat = Math.cos(lat0*Math.PI/180);
-
-  // proyeccion equirectangular simple, centrada en la latitud media
-  const xs = pts.map(p=>p.lng*cosLat), ys = pts.map(p=>-p.lat);
-  const minX=Math.min(...xs), maxX=Math.max(...xs), minY=Math.min(...ys), maxY=Math.max(...ys);
-  const spanX = maxX-minX, spanY = maxY-minY;
-  const scale = Math.min((VW-2*PAD)/spanX, (VH-2*PAD)/spanY);
-  const offX = PAD + ((VW-2*PAD)-spanX*scale)/2;
-  const offY = PAD + ((VH-2*PAD)-spanY*scale)/2;
-
-  function proj(lat,lng){
-    const x = (lng*cosLat - minX)*scale + offX;
-    const y = (-lat - minY)*scale + offY;
-    return [x,y];
-  }
-
-  let svg = '';
-
-  // graticule (lineas de referencia cada 0.5 grado)
-  function niceStep(span){ return span>3 ? 1 : 0.5; }
-  const latStep = niceStep(maxY-minY), lngStep = niceStep(maxX-minX);
-  for(let la = Math.ceil(-maxY/latStep)*latStep; la <= -minY; la += latStep){
-    const [x1,y1] = proj(la, minX/cosLat);
-    const [x2,y2] = proj(la, maxX/cosLat);
-    svg += `<line class="graticule" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
-    svg += `<text class="dpto-label" x="${x1-6}" y="${y1}" text-anchor="end" dominant-baseline="middle">${la.toFixed(0)}°S</text>`;
-  }
-
-  // agrupar por departamento para etiquetas de contexto (centroide real de sus escuelas)
-  const byDpto = {};
+  const bounds = [];
   pts.forEach(p=>{
-    if(!p.dpto) return;
-    (byDpto[p.dpto] = byDpto[p.dpto]||[]).push(p);
-  });
-  let dptoLabels = '';
-  Object.entries(byDpto).forEach(([dpto, arr])=>{
-    const clat = arr.reduce((s,p)=>s+p.lat,0)/arr.length;
-    const clng = arr.reduce((s,p)=>s+p.lng,0)/arr.length;
-    const [x,y] = proj(clat, clng);
-    dptoLabels += `<text class="dpto-label" x="${x}" y="${y}" text-anchor="middle" opacity="0.55">${dpto}</text>`;
-  });
-
-  let dots = '';
-  pts.forEach((p,i)=>{
-    const [x,y] = proj(p.lat, p.lng);
     const c = ausColor(p.ausentismo);
-    const r = p.approx ? 4.2 : 5.2;
-    const dash = p.approx ? 'stroke-dasharray="2,1.5" stroke="var(--text-mute)" stroke-width="1"' : 'stroke="rgba(0,0,0,0.35)" stroke-width="0.75"';
-    dots += `<circle class="mapdot" data-i="${i}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}" fill="${c}" fill-opacity="0.88" ${dash}/>`;
-  });
-
-  svgEl.innerHTML = svg + dptoLabels + dots;
-
-  const selTitle = document.getElementById('selTitle');
-  const selBody = document.getElementById('selBody');
-
-  function showDetail(p){
-    selTitle.textContent = p.esc;
-    const ausTxt = p.ausentismo!=null ? `${p.ausentismo.toFixed(1)}%` : 'sin dato calculable';
-    selBody.innerHTML = `
-      <div style="margin-bottom:.5rem"><strong style="color:var(--text)">${p.muni||'—'}</strong><br>${p.dpto||''}</div>
-      <div style="display:flex;justify-content:space-between;padding:.25rem 0;border-top:1px solid var(--border)"><span>Electores</span><span class="tabular" style="color:var(--text)">${p.electores.toLocaleString('es-AR')}</span></div>
-      <div style="display:flex;justify-content:space-between;padding:.25rem 0;border-top:1px solid var(--border)"><span>Mesas</span><span class="tabular" style="color:var(--text)">${p.mesas}</span></div>
-      <div style="display:flex;justify-content:space-between;padding:.25rem 0;border-top:1px solid var(--border)"><span>Ausentismo (zona)</span><span style="color:${ausColor(p.ausentismo)};font-weight:700">${ausTxt}</span></div>
-      <div style="margin-top:.6rem;color:var(--text-mute);font-size:.78rem">${p.dir||''}${p.approx ? ' · ubicación aproximada (centroide de la localidad)' : ''}</div>
-    `;
-  }
-
-  svgEl.addEventListener('mousemove', e=>{
-    const t = e.target;
-    if(t.tagName !== 'circle') { tooltip.style.opacity = 0; return; }
-    const p = pts[+t.dataset.i];
-    const rect = mapwrap.getBoundingClientRect();
-    const cx = (parseFloat(t.getAttribute('cx'))/VW)*rect.width;
-    const cy = (parseFloat(t.getAttribute('cy'))/VH)*rect.height;
-    tooltip.style.left = cx+'px';
-    tooltip.style.top = cy+'px';
-    tooltip.style.opacity = 1;
+    const marker = L.circleMarker([p.lat, p.lng], {
+      radius: p.approx ? 4.5 : 5.5,
+      fillColor: c,
+      fillOpacity: 0.88,
+      color: p.approx ? '#8a879c' : 'rgba(0,0,0,0.4)',
+      weight: p.approx ? 1 : 1,
+      dashArray: p.approx ? '2,2' : null,
+    }).addTo(map);
     const ausTxt = p.ausentismo!=null ? `${p.ausentismo.toFixed(1)}%` : 's/d';
-    tooltip.innerHTML = `<div class="t-esc">${p.esc}</div>
-      <div class="t-row"><span>${p.muni||'—'}</span></div>
-      <div class="t-row"><span>Ausentismo</span><span style="color:${ausColor(p.ausentismo)};font-weight:700">${ausTxt}</span></div>`;
-    showDetail(p);
+    marker.bindPopup(`
+      <div class="p-esc">${p.esc}</div>
+      <div class="p-row"><span>${p.muni||'—'}</span></div>
+      <div class="p-row"><span>Electores</span><span class="tabular">${p.electores.toLocaleString('es-AR')}</span></div>
+      <div class="p-row"><span>Ausentismo</span><span style="color:${c};font-weight:700">${ausTxt}</span></div>
+      ${p.approx ? '<div class="p-note">Ubicación aproximada (centroide de la localidad)</div>' : ''}
+    `);
+    marker.on('click', ()=>showDetail(p));
+    bounds.push([p.lat, p.lng]);
   });
-  svgEl.addEventListener('mouseleave', ()=>{ tooltip.style.opacity = 0; });
+  map.fitBounds(bounds, { padding: [24,24] });
 });
 </script>
 </body>
