@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mapa — Ausentismo Electoral Jujuy</title>
+<meta name="description" content="Mapa de 297 establecimientos de votación de Jujuy coloreados según el ausentismo de su Municipio o Comuna, elección del 11/05/2025.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%2314151d%22/><circle cx=%2250%22 cy=%2250%22 r=%2226%22 fill=%22%23de2d26%22/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="brand"><span class="word">Ausentismo Electoral</span><span class="sub">Jujuy · 11 de mayo de 2025</span></div>
+  <div class="navlinks">
+    <a href="index.html">Inicio</a>
+    <a href="mapa.html" class="active">Mapa</a>
+    <a href="buscador.html">Buscador</a>
+    <a href="metodologia.html">Metodología</a>
+  </div>
+</nav>
+
+<main>
+  <div class="hero" style="padding-top:1.4rem">
+    <div class="eyebrow">Mapa</div>
+    <h1 style="font-size:1.9rem">297 establecimientos, coloreados por el ausentismo de su zona</h1>
+    <p class="lede">Cada punto es una escuela; el color es el % de ausentismo del Municipio o Comuna al que pertenece (no un dato propio de la escuela). Pasá el mouse para ver el detalle.</p>
+  </div>
+
+  <section style="margin-top:1.2rem">
+    <div class="map-layout">
+      <div id="mapwrap">
+        <svg id="mapsvg" viewBox="0 0 800 1000" preserveAspectRatio="xMidYMid meet"></svg>
+        <div id="tooltip"></div>
+      </div>
+      <aside class="sidepanel">
+        <h4>Escala de ausentismo</h4>
+        <div class="legend">
+          <div><span class="swatch" style="background:var(--r1)"></span>&lt; 10%</div>
+          <div><span class="swatch" style="background:var(--r2)"></span>10–20%</div>
+          <div><span class="swatch" style="background:var(--r3)"></span>20–30%</div>
+          <div><span class="swatch" style="background:var(--r4)"></span>30–40%</div>
+          <div><span class="swatch" style="background:var(--r5)"></span>≥ 40%</div>
+          <div><span class="swatch" style="background:var(--gray-na)"></span>Sin dato calculable</div>
+        </div>
+        <h4 style="margin-top:1.4rem">Precisión del punto</h4>
+        <div class="legend">
+          <div>● Dirección exacta</div>
+          <div>◌ Centroide de la localidad</div>
+        </div>
+        <h4 style="margin-top:1.4rem" id="selTitle">Seleccioná un punto</h4>
+        <div id="selBody" style="font-size:0.85rem;color:var(--text-2)">Pasá el mouse sobre cualquier punto del mapa para ver su escuela, Municipio/Comuna, electores y ausentismo.</div>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <span>Fuente: Tribunal Electoral Permanente de Jujuy (electoraljujuy.gob.ar) · Consultora RZ</span>
+  <span><a href="index.html">← Inicio</a></span>
+</footer>
+
+<script>
+const svgEl = document.getElementById('mapsvg');
+const tooltip = document.getElementById('tooltip');
+const mapwrap = document.getElementById('mapwrap');
+const VW = 800, VH = 1000, PAD = 36;
+
+function ausColor(v){
+  if(v===null||v===undefined) return 'var(--gray-na)';
+  if(v<10) return 'var(--r1)';
+  if(v<20) return 'var(--r2)';
+  if(v<30) return 'var(--r3)';
+  if(v<40) return 'var(--r4)';
+  return 'var(--r5)';
+}
+
+fetch('data/establecimientos.json').then(r=>r.json()).then(points=>{
+  const pts = points.filter(p=>p.lat!=null && p.lng!=null);
+  const lat0 = pts.reduce((s,p)=>s+p.lat,0)/pts.length;
+  const cosLat = Math.cos(lat0*Math.PI/180);
+
+  // proyeccion equirectangular simple, centrada en la latitud media
+  const xs = pts.map(p=>p.lng*cosLat), ys = pts.map(p=>-p.lat);
+  const minX=Math.min(...xs), maxX=Math.max(...xs), minY=Math.min(...ys), maxY=Math.max(...ys);
+  const spanX = maxX-minX, spanY = maxY-minY;
+  const scale = Math.min((VW-2*PAD)/spanX, (VH-2*PAD)/spanY);
+  const offX = PAD + ((VW-2*PAD)-spanX*scale)/2;
+  const offY = PAD + ((VH-2*PAD)-spanY*scale)/2;
+
+  function proj(lat,lng){
+    const x = (lng*cosLat - minX)*scale + offX;
+    const y = (-lat - minY)*scale + offY;
+    return [x,y];
+  }
+
+  let svg = '';
+
+  // graticule (lineas de referencia cada 0.5 grado)
+  function niceStep(span){ return span>3 ? 1 : 0.5; }
+  const latStep = niceStep(maxY-minY), lngStep = niceStep(maxX-minX);
+  for(let la = Math.ceil(-maxY/latStep)*latStep; la <= -minY; la += latStep){
+    const [x1,y1] = proj(la, minX/cosLat);
+    const [x2,y2] = proj(la, maxX/cosLat);
+    svg += `<line class="graticule" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}"/>`;
+    svg += `<text class="dpto-label" x="${x1-6}" y="${y1}" text-anchor="end" dominant-baseline="middle">${la.toFixed(0)}°S</text>`;
+  }
+
+  // agrupar por departamento para etiquetas de contexto (centroide real de sus escuelas)
+  const byDpto = {};
+  pts.forEach(p=>{
+    if(!p.dpto) return;
+    (byDpto[p.dpto] = byDpto[p.dpto]||[]).push(p);
+  });
+  let dptoLabels = '';
+  Object.entries(byDpto).forEach(([dpto, arr])=>{
+    const clat = arr.reduce((s,p)=>s+p.lat,0)/arr.length;
+    const clng = arr.reduce((s,p)=>s+p.lng,0)/arr.length;
+    const [x,y] = proj(clat, clng);
+    dptoLabels += `<text class="dpto-label" x="${x}" y="${y}" text-anchor="middle" opacity="0.55">${dpto}</text>`;
+  });
+
+  let dots = '';
+  pts.forEach((p,i)=>{
+    const [x,y] = proj(p.lat, p.lng);
+    const c = ausColor(p.ausentismo);
+    const r = p.approx ? 4.2 : 5.2;
+    const dash = p.approx ? 'stroke-dasharray="2,1.5" stroke="var(--text-mute)" stroke-width="1"' : 'stroke="rgba(0,0,0,0.35)" stroke-width="0.75"';
+    dots += `<circle class="mapdot" data-i="${i}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${r}" fill="${c}" fill-opacity="0.88" ${dash}/>`;
+  });
+
+  svgEl.innerHTML = svg + dptoLabels + dots;
+
+  const selTitle = document.getElementById('selTitle');
+  const selBody = document.getElementById('selBody');
+
+  function showDetail(p){
+    selTitle.textContent = p.esc;
+    const ausTxt = p.ausentismo!=null ? `${p.ausentismo.toFixed(1)}%` : 'sin dato calculable';
+    selBody.innerHTML = `
+      <div style="margin-bottom:.5rem"><strong style="color:var(--text)">${p.muni||'—'}</strong><br>${p.dpto||''}</div>
+      <div style="display:flex;justify-content:space-between;padding:.25rem 0;border-top:1px solid var(--border)"><span>Electores</span><span class="tabular" style="color:var(--text)">${p.electores.toLocaleString('es-AR')}</span></div>
+      <div style="display:flex;justify-content:space-between;padding:.25rem 0;border-top:1px solid var(--border)"><span>Mesas</span><span class="tabular" style="color:var(--text)">${p.mesas}</span></div>
+      <div style="display:flex;justify-content:space-between;padding:.25rem 0;border-top:1px solid var(--border)"><span>Ausentismo (zona)</span><span style="color:${ausColor(p.ausentismo)};font-weight:700">${ausTxt}</span></div>
+      <div style="margin-top:.6rem;color:var(--text-mute);font-size:.78rem">${p.dir||''}${p.approx ? ' · ubicación aproximada (centroide de la localidad)' : ''}</div>
+    `;
+  }
+
+  svgEl.addEventListener('mousemove', e=>{
+    const t = e.target;
+    if(t.tagName !== 'circle') { tooltip.style.opacity = 0; return; }
+    const p = pts[+t.dataset.i];
+    const rect = mapwrap.getBoundingClientRect();
+    const cx = (parseFloat(t.getAttribute('cx'))/VW)*rect.width;
+    const cy = (parseFloat(t.getAttribute('cy'))/VH)*rect.height;
+    tooltip.style.left = cx+'px';
+    tooltip.style.top = cy+'px';
+    tooltip.style.opacity = 1;
+    const ausTxt = p.ausentismo!=null ? `${p.ausentismo.toFixed(1)}%` : 's/d';
+    tooltip.innerHTML = `<div class="t-esc">${p.esc}</div>
+      <div class="t-row"><span>${p.muni||'—'}</span></div>
+      <div class="t-row"><span>Ausentismo</span><span style="color:${ausColor(p.ausentismo)};font-weight:700">${ausTxt}</span></div>`;
+    showDetail(p);
+  });
+  svgEl.addEventListener('mouseleave', ()=>{ tooltip.style.opacity = 0; });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Buscador — Ausentismo Electoral Jujuy</title>
+<meta name="description" content="Buscá una escuela, Municipio o Comuna de Jujuy y mirá sus electores, votantes y ausentismo de la elección del 11/05/2025.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%2314151d%22/><circle cx=%2250%22 cy=%2250%22 r=%2226%22 fill=%22%23de2d26%22/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="brand"><span class="word">Ausentismo Electoral</span><span class="sub">Jujuy · 11 de mayo de 2025</span></div>
+  <div class="navlinks">
+    <a href="index.html">Inicio</a>
+    <a href="mapa.html">Mapa</a>
+    <a href="buscador.html" class="active">Buscador</a>
+    <a href="metodologia.html">Metodología</a>
+  </div>
+</nav>
+
+<main>
+  <div class="hero" style="padding-top:1.4rem">
+    <div class="eyebrow">Buscador</div>
+    <h1 style="font-size:1.9rem">Escuelas, Municipios y Comunas</h1>
+    <p class="lede">Ordená por columna o buscá por nombre. "s/d" = sin dato calculable (ver metodología).</p>
+  </div>
+
+  <section style="margin-top:1.2rem">
+    <div class="searchbar">
+      <input type="search" id="q" placeholder="Buscar por nombre de escuela, Municipio o Comuna…" autocomplete="off">
+      <div class="toggle-group" id="viewToggle">
+        <button data-view="est" class="active">Establecimientos (308)</button>
+        <button data-view="muni">Municipios / Comunas (64)</button>
+      </div>
+    </div>
+    <div class="count-note" id="countNote"></div>
+    <div style="overflow-x:auto">
+      <table id="tbl">
+        <thead><tr id="thead"></tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <span>Fuente: Tribunal Electoral Permanente de Jujuy (electoraljujuy.gob.ar) · Consultora RZ</span>
+  <span><a href="index.html">← Inicio</a></span>
+</footer>
+
+<script>
+const COLS = {
+  est: [
+    {k:'esc', label:'Establecimiento', sort:'str'},
+    {k:'muni', label:'Municipio / Comuna', sort:'str'},
+    {k:'dpto', label:'Departamento', sort:'str'},
+    {k:'electores', label:'Electores', sort:'num'},
+    {k:'ausentismo', label:'Ausentismo', sort:'num'},
+  ],
+  muni: [
+    {k:'nombre', label:'Municipio / Comuna', sort:'str'},
+    {k:'departamento', label:'Departamento', sort:'str'},
+    {k:'electores', label:'Electores', sort:'num'},
+    {k:'votantes', label:'Votantes', sort:'num'},
+    {k:'ausentismo', label:'Ausentismo', sort:'num'},
+  ],
+};
+
+let state = { view:'est', data:{est:[],muni:[]}, sortKey:'ausentismo', sortDir:-1, q:'' };
+
+function ausColor(v){
+  if(v===null||v===undefined) return 'var(--gray-na)';
+  if(v<10) return 'var(--r1)';
+  if(v<20) return 'var(--r2)';
+  if(v<30) return 'var(--r3)';
+  if(v<40) return 'var(--r4)';
+  return 'var(--r5)';
+}
+function pill(v){
+  if(v===null||v===undefined) return `<span class="pill na">s/d</span>`;
+  return `<span class="pill" style="background:${ausColor(v)}22;color:${ausColor(v)}"><span class="dot" style="background:${ausColor(v)}"></span>${v.toFixed(1)}%</span>`;
+}
+
+function render(){
+  const cols = COLS[state.view];
+  const thead = document.getElementById('thead');
+  thead.innerHTML = cols.map(c=>{
+    const active = c.k===state.sortKey ? 'sorted' : '';
+    const arrow = c.k===state.sortKey ? (state.sortDir===1?' ↑':' ↓') : '';
+    return `<th class="${active}" data-k="${c.k}" data-sort="${c.sort}">${c.label}${arrow}</th>`;
+  }).join('');
+
+  let rows = state.data[state.view].slice();
+  if(state.q){
+    const q = state.q.toLowerCase();
+    rows = rows.filter(r => Object.values(r).some(v => typeof v==='string' && v.toLowerCase().includes(q)));
+  }
+  rows.sort((a,b)=>{
+    let av=a[state.sortKey], bv=b[state.sortKey];
+    if(av===null||av===undefined) av = state.sortDir===1 ? Infinity : -Infinity;
+    if(bv===null||bv===undefined) bv = state.sortDir===1 ? Infinity : -Infinity;
+    if(typeof av==='string') return av.localeCompare(bv)*state.sortDir;
+    return (av-bv)*state.sortDir;
+  });
+
+  document.getElementById('countNote').textContent = `${rows.length} resultado${rows.length===1?'':'s'}`;
+
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = rows.map(r=>{
+    return '<tr>' + cols.map(c=>{
+      let v = r[c.k];
+      if(c.k==='ausentismo') return `<td>${pill(v)}</td>`;
+      if(c.sort==='num') return `<td class="tabular">${v!=null ? v.toLocaleString('es-AR') : '—'}</td>`;
+      return `<td>${v||'—'}</td>`;
+    }).join('') + '</tr>';
+  }).join('');
+}
+
+document.getElementById('thead').addEventListener('click', e=>{
+  const th = e.target.closest('th'); if(!th) return;
+  const k = th.dataset.k;
+  if(state.sortKey===k) state.sortDir *= -1;
+  else { state.sortKey = k; state.sortDir = th.dataset.sort==='str' ? 1 : -1; }
+  render();
+});
+document.getElementById('q').addEventListener('input', e=>{ state.q = e.target.value; render(); });
+document.getElementById('viewToggle').addEventListener('click', e=>{
+  const b = e.target.closest('button'); if(!b) return;
+  document.querySelectorAll('#viewToggle button').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  state.view = b.dataset.view;
+  state.sortKey = 'ausentismo'; state.sortDir = -1;
+  render();
+});
+
+Promise.all([
+  fetch('data/establecimientos.json').then(r=>r.json()),
+  fetch('data/municipios.json').then(r=>r.json()),
+]).then(([est, muni])=>{
+  state.data.est = est;
+  state.data.muni = muni;
+  render();
+});
+</script>
+</body>
+</html>

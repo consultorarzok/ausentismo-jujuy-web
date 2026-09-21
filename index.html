@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ausentismo Electoral Jujuy</title>
+<meta name="description" content="Mapa y buscador del ausentismo en la Elección Provincial Legislativa de Jujuy del 11/05/2025, por Municipio y Comuna, con datos públicos agregados del Tribunal Electoral.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%2314151d%22/><circle cx=%2250%22 cy=%2250%22 r=%2226%22 fill=%22%23de2d26%22/></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:wght@500;600;700&family=Public+Sans:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="topnav">
+  <div class="brand"><span class="word">Ausentismo Electoral</span><span class="sub">Jujuy · 11 de mayo de 2025</span></div>
+  <div class="navlinks">
+    <a href="index.html" class="active">Inicio</a>
+    <a href="mapa.html">Mapa</a>
+    <a href="buscador.html">Buscador</a>
+    <a href="metodologia.html">Metodología</a>
+  </div>
+</nav>
+
+<main>
+  <div class="hero">
+    <div class="eyebrow">Elección Provincial Legislativa · Datos agregados y públicos</div>
+    <h1>Cuánta gente no votó, mesa por mesa, en toda la provincia.</h1>
+    <p class="lede">Cruce del escrutinio definitivo con la guía de mesas del Tribunal Electoral Permanente de Jujuy: electores habilitados contra votos emitidos, agregados por Municipio y Comuna — nunca por persona.</p>
+
+    <div class="stat-row">
+      <div class="stat-tile"><div class="n red">31,7%</div><div class="l">Ausentismo provincial (total real)</div></div>
+      <div class="stat-tile"><div class="n tabular">598.408</div><div class="l">Electores habilitados</div></div>
+      <div class="stat-tile"><div class="n tabular">1.796</div><div class="l">Mesas / 308 establecimientos</div></div>
+      <div class="stat-tile"><div class="n tabular">52<span style="color:var(--text-mute);font-size:1.1rem"> / 64</span></div><div class="l">Municipios y Comunas con ausentismo calculado</div></div>
+    </div>
+  </div>
+
+  <section>
+    <h2>Entrar</h2>
+    <div class="grid-2">
+      <a class="card" href="mapa.html">
+        <h3>Mapa</h3>
+        <p>297 establecimientos ubicados en el mapa de la provincia, coloreados según el ausentismo del Municipio o Comuna al que pertenecen.</p>
+        <span class="go">Ver el mapa →</span>
+      </a>
+      <a class="card" href="buscador.html">
+        <h3>Buscador</h3>
+        <p>Buscá una escuela, un Municipio o una Comuna por nombre y mirá sus electores, votantes y % de ausentismo.</p>
+        <span class="go">Buscar →</span>
+      </a>
+    </div>
+  </section>
+
+  <section>
+    <h2>Por qué existe esto</h2>
+    <p class="narrow" style="color:var(--text-2)">
+      Este ausentismo agregado por zona sirve como una métrica más para priorizar gestión y obras — no reemplaza otros
+      criterios, pero muestra en qué Municipios y Comunas el electorado se acercó menos a votar. Es información
+      100% pública y agregada: nada de padrón nominal, nada de quién votó o quién no. La unidad mínima de análisis
+      es la mesa o el establecimiento, nunca una persona. Ver el detalle completo en
+      <a href="metodologia.html">metodología y limitaciones</a>.
+    </p>
+  </section>
+</main>
+
+<footer>
+  <span>Fuente: Tribunal Electoral Permanente de Jujuy (electoraljujuy.gob.ar) · Consultora RZ</span>
+  <span><a href="metodologia.html">Fuentes y metodología</a></span>
+</footer>
+
+</body>
+</html>
