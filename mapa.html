@@ -8,7 +8,6 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2220%22 fill=%22%237C0FDB%22/><circle cx=%2250%22 cy=%2250%22 r=%2226%22 fill=%22%23de2d26%22/></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <link rel="stylesheet" href="style.css">
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
 </head>
@@ -42,7 +41,7 @@
 
   <section style="margin-top:1.2rem">
     <div class="map-layout">
-      <div id="mapwrap"><div id="leafmap"></div></div>
+      <div id="mapwrap"><div id="gmap"></div></div>
       <aside class="sidepanel">
         <h4>Escala de ausentismo</h4>
         <div class="legend stacked">
@@ -66,11 +65,10 @@
 </main>
 
 <footer>
-  <span>FUENTE: TEP JUJUY · MAPA © OPENSTREETMAP / CARTO · CONSULTORA RZ</span>
+  <span>FUENTE: TEP JUJUY · MAPA © GOOGLE · CONSULTORA RZ</span>
   <span><a class="inline" href="index.html">← Inicio</a></span>
 </footer>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <script>
 document.getElementById('theme-toggle').addEventListener('click', function(){
   var cur = document.documentElement.getAttribute('data-theme');
@@ -79,7 +77,7 @@ document.getElementById('theme-toggle').addEventListener('click', function(){
   document.documentElement.setAttribute('data-theme', next);
   try{localStorage.setItem('theme', next);}catch(e){}
   this.setAttribute('aria-checked', String(next==='dark'));
-  swapTiles(next==='dark');
+  if(window.__gmap) window.__gmap.setOptions({ styles: next==='dark' ? DARK_STYLE : [] });
 });
 function isDarkNow(){
   var cur = document.documentElement.getAttribute('data-theme');
@@ -96,17 +94,20 @@ function ausColor(v){
   return '#a50f15';
 }
 
-const TILE_LIGHT = 'https://{s}.basemaps.cartocdn.com/voyager/{z}/{x}/{y}{r}.png';
-const TILE_DARK  = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
-const ATTRIB = '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
-
-const map = L.map('leafmap', { zoomControl:true, attributionControl:true }).setView([-23.3, -65.6], 7);
-let tileLayer = L.tileLayer(isDarkNow() ? TILE_DARK : TILE_LIGHT, { attribution: ATTRIB, subdomains:'abcd', maxZoom:19 }).addTo(map);
-
-function swapTiles(dark){
-  map.removeLayer(tileLayer);
-  tileLayer = L.tileLayer(dark ? TILE_DARK : TILE_LIGHT, { attribution: ATTRIB, subdomains:'abcd', maxZoom:19 }).addTo(map);
-}
+const DARK_STYLE = [
+  { elementType: 'geometry', stylers: [{ color: '#1c1730' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#120e1f' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#b4acd1' }] },
+  { featureType: 'administrative', elementType: 'geometry', stylers: [{ color: '#352c54' }] },
+  { featureType: 'administrative.locality', elementType: 'labels.text.fill', stylers: [{ color: '#f1edfb' }] },
+  { featureType: 'poi', stylers: [{ visibility: 'off' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#241e3d' }] },
+  { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#8a7fa8' }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#352c54' }] },
+  { featureType: 'transit', stylers: [{ visibility: 'off' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0f0c1a' }] },
+  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#6b6480' }] }
+];
 
 const selTitle = document.getElementById('selTitle');
 const selBody = document.getElementById('selBody');
@@ -123,32 +124,56 @@ function showDetail(p){
   `;
 }
 
-fetch('data/establecimientos.json').then(r=>r.json()).then(points=>{
-  const pts = points.filter(p=>p.lat!=null && p.lng!=null);
-  const bounds = [];
-  pts.forEach(p=>{
-    const c = ausColor(p.ausentismo);
-    const marker = L.circleMarker([p.lat, p.lng], {
-      radius: p.approx ? 4.5 : 5.5,
-      fillColor: c,
-      fillOpacity: 0.88,
-      color: p.approx ? '#8a879c' : 'rgba(0,0,0,0.4)',
-      weight: 1,
-      dashArray: p.approx ? '2,2' : null,
-    }).addTo(map);
-    const ausTxt = p.ausentismo!=null ? `${p.ausentismo.toFixed(1)}%` : 's/d';
-    marker.bindPopup(`
-      <div class="p-esc">${p.esc}</div>
-      <div class="p-row"><span>${p.muni||'—'}</span></div>
-      <div class="p-row"><span>Electores</span><span class="mono">${p.electores.toLocaleString('es-AR')}</span></div>
-      <div class="p-row"><span>Ausentismo</span><span style="color:${c};font-weight:700">${ausTxt}</span></div>
-      ${p.approx ? '<div class="p-note">Ubicación aproximada (centroide de la localidad)</div>' : ''}
-    `);
-    marker.on('click', ()=>showDetail(p));
-    bounds.push([p.lat, p.lng]);
+function initMap(){
+  const map = new google.maps.Map(document.getElementById('gmap'), {
+    center: { lat: -23.3, lng: -65.6 },
+    zoom: 7,
+    styles: isDarkNow() ? DARK_STYLE : [],
+    mapTypeControl: false,
+    streetViewControl: true,
+    fullscreenControl: true,
   });
-  map.fitBounds(bounds, { padding: [24,24] });
-});
+  window.__gmap = map;
+
+  fetch('data/establecimientos.json').then(r=>r.json()).then(points=>{
+    const pts = points.filter(p=>p.lat!=null && p.lng!=null);
+    const bounds = new google.maps.LatLngBounds();
+    const infoWindow = new google.maps.InfoWindow();
+
+    pts.forEach(p=>{
+      const c = ausColor(p.ausentismo);
+      const pos = { lat: p.lat, lng: p.lng };
+      const marker = new google.maps.Marker({
+        position: pos,
+        map,
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: p.approx ? 4.5 : 5.5,
+          fillColor: c,
+          fillOpacity: 0.88,
+          strokeColor: p.approx ? '#8a879c' : 'rgba(0,0,0,0.4)',
+          strokeWeight: 1,
+        },
+        title: p.esc,
+      });
+      const ausTxt = p.ausentismo!=null ? `${p.ausentismo.toFixed(1)}%` : 's/d';
+      marker.addListener('click', ()=>{
+        showDetail(p);
+        infoWindow.setContent(`
+          <div class="p-esc">${p.esc}</div>
+          <div class="p-row"><span>${p.muni||'—'}</span></div>
+          <div class="p-row"><span>Electores</span><span class="mono">${p.electores.toLocaleString('es-AR')}</span></div>
+          <div class="p-row"><span>Ausentismo</span><span style="color:${c};font-weight:700">${ausTxt}</span></div>
+          ${p.approx ? '<div class="p-note">Ubicación aproximada (centroide de la localidad)</div>' : ''}
+        `);
+        infoWindow.open({ map, anchor: marker });
+      });
+      bounds.extend(pos);
+    });
+    map.fitBounds(bounds, 24);
+  });
+}
 </script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBY57W1544aRhbxLiesSlUnnheRuD_3spQ&callback=initMap" async defer></script>
 </body>
 </html>

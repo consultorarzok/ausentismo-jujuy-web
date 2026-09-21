@@ -146,17 +146,16 @@ input[type=search]:focus,input[type=text]:focus{outline:2px solid var(--accent);
 .map-layout{display:grid;grid-template-columns:1fr 300px;gap:1.2rem;align-items:start}
 @media (max-width:900px){.map-layout{grid-template-columns:1fr}}
 #mapwrap{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;height:74vh;min-height:480px;box-shadow:var(--shadow)}
-#leafmap{width:100%;height:100%}
+#gmap{width:100%;height:100%}
 .sidepanel{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:1.2rem;box-shadow:var(--shadow)}
 .sidepanel h4{font-family:'JetBrains Mono',monospace;font-size:.7rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:.7rem}
 
-.leaflet-popup-content-wrapper{background:var(--surface);color:var(--ink);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.25)}
-.leaflet-popup-tip{background:var(--surface)}
-.leaflet-popup-content{margin:.8rem .9rem;font-family:'Manrope',sans-serif;font-size:.83rem;min-width:190px}
-.leaflet-popup-content .p-esc{font-family:'Ambit','Unbounded',sans-serif;font-weight:700;color:var(--ink);margin-bottom:.3rem;font-size:.9rem}
-.leaflet-popup-content .p-row{display:flex;justify-content:space-between;gap:.7rem;padding:.18rem 0;border-top:1px solid var(--border);color:var(--muted)}
-.leaflet-popup-content .p-note{margin-top:.4rem;font-size:.74rem;color:var(--muted);font-family:'JetBrains Mono',monospace}
-.leaflet-control-attribution{background:rgba(255,255,255,.85) !important;font-size:10px !important}
+.gm-style .gm-style-iw-c{background:var(--surface);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.gm-style .gm-style-iw-d{overflow:auto !important}
+.gm-style .gm-style-iw-tc::after{background:var(--surface)}
+.p-esc{font-family:'Ambit','Unbounded',sans-serif;font-weight:700;color:var(--ink);margin-bottom:.3rem;font-size:.9rem}
+.p-row{display:flex;justify-content:space-between;gap:.7rem;padding:.18rem 0;border-top:1px solid var(--border);color:var(--muted);font-family:'Manrope',sans-serif;font-size:.83rem;min-width:190px}
+.p-note{margin-top:.4rem;font-size:.74rem;color:var(--muted);font-family:'JetBrains Mono',monospace}
 :root[data-theme="dark"] .leaflet-control-attribution{background:rgba(18,14,31,.85) !important}
 @media (prefers-color-scheme:dark){ :root:not([data-theme="light"]) .leaflet-control-attribution{background:rgba(18,14,31,.85) !important} }
 .leaflet-control-zoom a{background:var(--surface) !important;color:var(--ink) !important;border-color:var(--border) !important}
