@@ -158,6 +158,12 @@ function precisionLabel(r){
   return r.approx ? 'Centroide de la localidad (aprox.)' : 'Dirección exacta';
 }
 
+function estAusentesTxt(r){
+  if(r.electores==null || r.ausentismo==null) return '—';
+  const ausentes = Math.round(r.electores * r.ausentismo / 100);
+  return `${ausentes.toLocaleString('es-AR')} de ${r.electores.toLocaleString('es-AR')} (${r.ausentismo.toFixed(1)}%)`;
+}
+
 function ausentesLine(muniRow){
   if(!muniRow || muniRow.electores==null || muniRow.votantes==null) return '';
   const aus = muniRow.electores - muniRow.votantes;
@@ -177,6 +183,7 @@ function openEstDetail(r){
       ${detailRow('Departamento', esc(r.dpto||'—'))}
       ${detailRow('Electores (esta escuela)', r.electores!=null ? r.electores.toLocaleString('es-AR') : '—')}
       ${detailRow('Mesas', r.mesas!=null ? r.mesas : '—')}
+      ${detailRow('No votaron (estimado)', estAusentesTxt(r))}
       ${detailRow('Precisión del punto', esc(precisionLabel(r)))}
     </div>
 
@@ -193,7 +200,7 @@ function openEstDetail(r){
     actions.push(`<a href="https://www.google.com/maps/search/?api=1&query=${r.lat},${r.lng}" target="_blank" rel="noopener">Abrir en Google Maps ↗</a>`);
   }
   if(actions.length) html += `<div class="detail-actions">${actions.join('')}</div>`;
-  html += `<div class="detail-note">El ausentismo mostrado es el de su Municipio/Comuna — no es un dato propio de la escuela, cada establecimiento no reporta ausentismo individual.</div>`;
+  html += `<div class="detail-note">El % de ausentismo es el de su Municipio/Comuna (cada escuela no reporta resultado propio). "No votaron (estimado)" aplica ese mismo % a los electores de esta escuela — es una estimación, no un conteo real de esta escuela.</div>`;
   showModal(html);
 }
 
