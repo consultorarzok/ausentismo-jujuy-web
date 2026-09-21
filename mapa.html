@@ -116,6 +116,14 @@ const DARK_STYLE = [
 
 const selTitle = document.getElementById('selTitle');
 const selBody = document.getElementById('selBody');
+let muniIndex = {};
+
+function ausentesLine(p){
+  const m = muniIndex[p.muni];
+  if(!m || m.electores==null || m.votantes==null) return '';
+  const aus = m.electores - m.votantes;
+  return `<div style="margin-top:.15rem;color:var(--muted);font-size:.76rem">${aus.toLocaleString('es-AR')} de ${m.electores.toLocaleString('es-AR')} electores no votaron</div>`;
+}
 
 function showDetail(p){
   selTitle.textContent = p.esc;
@@ -125,6 +133,7 @@ function showDetail(p){
     <div style="display:flex;justify-content:space-between;padding:.25rem 0;border-top:1px solid var(--border)"><span>Electores</span><span class="tabular" style="color:var(--ink)">${p.electores.toLocaleString('es-AR')}</span></div>
     <div style="display:flex;justify-content:space-between;padding:.25rem 0;border-top:1px solid var(--border)"><span>Mesas</span><span class="tabular" style="color:var(--ink)">${p.mesas}</span></div>
     <div style="display:flex;justify-content:space-between;padding:.25rem 0;border-top:1px solid var(--border)"><span>Ausentismo (zona)</span><span style="color:${ausColor(p.ausentismo)};font-weight:700">${ausTxt}</span></div>
+    ${ausentesLine(p)}
     <div style="margin-top:.6rem;color:var(--muted);font-size:.78rem" class="mono">${p.dir||''}${p.approx ? ' · aprox.' : ''}</div>
   `;
 }
@@ -140,7 +149,11 @@ function initMap(){
   });
   window.__gmap = map;
 
-  fetch('data/establecimientos.json').then(r=>r.json()).then(points=>{
+  Promise.all([
+    fetch('data/establecimientos.json').then(r=>r.json()),
+    fetch('data/municipios.json').then(r=>r.json()),
+  ]).then(([points, munis])=>{
+    munis.forEach(m=>{ muniIndex[m.nombre] = m; });
     const pts = points.filter(p=>p.lat!=null && p.lng!=null);
     const bounds = new google.maps.LatLngBounds();
     const infoWindow = new google.maps.InfoWindow();
@@ -170,6 +183,7 @@ function initMap(){
           <div class="p-row"><span>${p.muni||'—'}</span></div>
           <div class="p-row"><span>Electores</span><span class="mono">${p.electores.toLocaleString('es-AR')}</span></div>
           <div class="p-row"><span>Ausentismo</span><span style="color:${c};font-weight:700">${ausTxt}</span></div>
+          ${ausentesLine(p)}
           ${p.approx ? '<div class="p-note">Ubicación aproximada (centroide de la localidad)</div>' : ''}
         `);
         infoWindow.open({ map, anchor: marker });

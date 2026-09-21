@@ -158,17 +158,24 @@ function precisionLabel(r){
   return r.approx ? 'Centroide de la localidad (aprox.)' : 'Dirección exacta';
 }
 
+function ausentesLine(muniRow){
+  if(!muniRow || muniRow.electores==null || muniRow.votantes==null) return '';
+  const aus = muniRow.electores - muniRow.votantes;
+  return `<div style="font-weight:400;color:var(--muted);font-size:.76rem;margin-top:.25rem">${aus.toLocaleString('es-AR')} de ${muniRow.electores.toLocaleString('es-AR')} electores no votaron</div>`;
+}
+
 function openEstDetail(r){
   const ausTxt = r.ausentismo!=null ? pill(r.ausentismo) : '<span class="pill na">s/d</span>';
+  const muniRow = state.data.muni.find(m=>m.nombre===r.muni);
   let html = `
     <button class="modal-close" id="modalClose" aria-label="Cerrar">✕</button>
     <h3>${esc(r.esc)}</h3>
     <div class="modal-sub">${esc(r.dir||'—')} · ${esc(r.loc||'—')}</div>
     ${detailRow('Municipio / Comuna', esc(r.muni||'—'))}
     ${detailRow('Departamento', esc(r.dpto||'—'))}
-    ${detailRow('Electores', r.electores!=null ? r.electores.toLocaleString('es-AR') : '—')}
+    ${detailRow('Electores (esta escuela)', r.electores!=null ? r.electores.toLocaleString('es-AR') : '—')}
     ${detailRow('Mesas', r.mesas!=null ? r.mesas : '—')}
-    ${detailRow('Ausentismo (zona)', ausTxt)}
+    ${detailRow('Ausentismo (zona)', ausTxt + ausentesLine(muniRow))}
     ${detailRow('Precisión del punto', esc(precisionLabel(r)))}
   `;
   const actions = [];
@@ -191,7 +198,7 @@ function openMuniDetail(r){
     ${detailRow('Cobertura de mesas', r.cobertura!=null ? r.cobertura.toFixed(1)+'%' : '—')}
     ${detailRow('Electores', r.electores!=null ? r.electores.toLocaleString('es-AR') : '—')}
     ${detailRow('Votantes', r.votantes!=null ? r.votantes.toLocaleString('es-AR') : '—')}
-    ${detailRow('Ausentismo', ausTxt)}
+    ${detailRow('Ausentismo', ausTxt + ausentesLine(r))}
   `;
   if(r.nota) html += `<div class="detail-note">${esc(r.nota)}</div>`;
   showModal(html);
