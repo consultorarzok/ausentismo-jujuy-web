@@ -142,9 +142,9 @@ function render(){
   tbody.innerHTML = rows.map((r,i)=>{
     return `<tr data-i="${i}">` + cols.map(c=>{
       let v = r[c.k];
-      if(c.k==='ausentismo') return `<td>${pill(v)}</td>`;
-      if(c.sort==='num') return `<td class="tabular">${v!=null ? v.toLocaleString('es-AR') : '—'}</td>`;
-      return `<td>${v||'—'}</td>`;
+      if(c.k==='ausentismo') return `<td data-label="${c.label}">${pill(v)}</td>`;
+      if(c.sort==='num') return `<td class="tabular" data-label="${c.label}">${v!=null ? v.toLocaleString('es-AR') : '—'}</td>`;
+      return `<td data-label="${c.label}">${v||'—'}</td>`;
     }).join('') + '</tr>';
   }).join('');
 }
