@@ -85,6 +85,27 @@ main{max-width:1180px;margin:0 auto;padding:2.2rem 1.5rem 4rem}
 
 /* ---------- hero ---------- */
 .hero{padding:2.6rem 0 1.8rem;border-bottom:1px solid var(--border);margin-bottom:2rem}
+.hero.hero-photo{
+  background: linear-gradient(100deg, rgba(18,14,31,.92) 0%, rgba(18,14,31,.72) 42%, rgba(18,14,31,.32) 100%), url('images/hero-datos.jpg');
+  background-size: cover;
+  background-position: right center;
+  border-radius: 20px;
+  border-bottom: none;
+  padding: 3rem 2rem;
+}
+.hero.hero-photo .eyebrow{color:var(--lavender,#C09EFB)}
+.hero.hero-photo h1{color:#F1EDFB}
+.hero.hero-photo p.lede{color:#C9C3DD}
+.hero.hero-photo .stat-grid{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18)}
+.hero.hero-photo .stat{background:rgba(18,14,31,.55)}
+.hero.hero-photo .stat b{color:#fff}
+.hero.hero-photo .stat span{color:#B4ACD1}
+@media (max-width:480px){.hero.hero-photo{padding:2rem 1.2rem;background-position:75% center}}
+
+.hero-flex{display:flex;align-items:center;justify-content:space-between;gap:1.6rem}
+.hero-flex > .hero-text{flex:1;min-width:0}
+.hero-accent{width:240px;flex:none;border-radius:16px;box-shadow:var(--shadow);display:block}
+@media (max-width:760px){.hero-accent{display:none}}
 .eyebrow{font-family:'JetBrains Mono',monospace;text-transform:uppercase;letter-spacing:.09em;font-size:.7rem;color:var(--accent);font-weight:600;margin-bottom:.7rem;display:inline-flex;align-items:center;gap:.4em}
 .eyebrow::before{content:'';width:.5em;height:.5em;border-radius:1px;background:var(--accent);display:inline-block}
 .hero h1{font-size:clamp(1.7rem,3.4vw,2.5rem)}
