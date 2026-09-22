@@ -152,6 +152,7 @@ function showDetail(p){
     ${ausentesLine(p)}
     ${estAusentesLine(p)}
     <div style="margin-top:.6rem;color:var(--muted);font-size:.78rem" class="mono">${p.dir||''}${p.approx ? ' · aprox.' : ''}</div>
+    <div style="margin-top:.8rem"><a class="inline" href="https://www.google.com/search?q=${encodeURIComponent('"'+p.esc+'" '+(p.loc||p.muni||'')+' Jujuy')}" target="_blank" rel="noopener">Buscar en Google ↗</a></div>
   `;
 }
 

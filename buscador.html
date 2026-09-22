@@ -209,6 +209,8 @@ function openEstDetail(r){
     actions.push(`<a href="mapa.html?esc=${encodeURIComponent(r.esc)}">Ver en nuestro mapa →</a>`);
     actions.push(`<a href="https://www.google.com/maps/search/?api=1&query=${r.lat},${r.lng}" target="_blank" rel="noopener">Abrir en Google Maps ↗</a>`);
   }
+  const gq = `"${r.esc}" ${r.loc || r.muni || ''} Jujuy`;
+  actions.push(`<a href="https://www.google.com/search?q=${encodeURIComponent(gq)}" target="_blank" rel="noopener">Buscar en Google ↗</a>`);
   if(actions.length) html += `<div class="detail-actions">${actions.join('')}</div>`;
   html += `<div class="detail-note">El % de ausentismo es el de su Municipio/Comuna (cada escuela no reporta resultado propio). "No votaron (estimado)" aplica ese mismo % a los electores de esta escuela — es una estimación, no un conteo real de esta escuela.</div>`;
   showModal(html);
